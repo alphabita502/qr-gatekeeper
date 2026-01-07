@@ -1,0 +1,111 @@
+from flask import Flask, request, render_template_string, redirect, url_for, make_response
+import time
+
+app = Flask(__name__)
+
+# --- CONFIGURATION ---
+LINKS = {
+    "wiki": { "url": "https://www.wikipedia.org", "password": "WikiPassword123" },
+    "google": { "url": "https://www.google.com", "password": "GoogleSecret456" },
+    "youtube": { "url": "https://www.youtube.com", "password": "VideoPassword789" }
+}
+
+LOGO_FILENAME = "logo.png"
+BRAND_TEXT = "SNR.AUDIO"
+
+# RATE LIMIT SETTINGS
+MAX_RETRIES = 5
+BAN_TIME_SECONDS = 300  # 5 Minutes
+
+HTML_TEMPLATE = """
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Access</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; background: #2c3e50; color: white;}
+        .card { background: #34495e; padding: 2rem; border-radius: 12px; box-shadow: 0 10px 20px rgba(0,0,0,0.3); text-align: center; max-width: 90%; width: 350px; }
+        input { padding: 12px; width: 85%; margin: 15px 0; border: none; border-radius: 6px; }
+        button { padding: 12px 25px; background: #27ae60; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; transition: 0.3s; }
+        button:hover { background: #2ecc71; }
+        .error { color: #e74c3c; margin-top: 15px; font-weight: bold; }
+        .blocked { color: #f39c12; margin-bottom: 15px; font-weight: bold; border: 1px solid #f39c12; padding: 10px; border-radius: 5px; background: rgba(243, 156, 18, 0.1); }
+        .logo { max-width: 150px; max-height: 100px; width: auto; height: auto; margin-bottom: 5px; border-radius: 4px; }
+        .brand-name { color: #bdc3c7; font-size: 0.85rem; font-weight: 700; letter-spacing: 2px; margin-bottom: 25px; text-transform: uppercase; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <img src="{{ url_for('static', filename=logo_file) }}" alt="Logo" class="logo">
+        <div class="brand-name">{{ brand_text }}</div>
+        <h2>🔒 Restricted Link</h2>
+        
+        {% if blocked %}
+            <div class="blocked">⛔ Too many attempts.<br>Please wait 5 minutes.</div>
+        {% else %}
+            <form method="POST" action="/?id={{ link_id }}">
+                <input type="password" name="password" placeholder="Enter Access Code" required autofocus>
+                <button type="submit">Unlock</button>
+            </form>
+        {% endif %}
+        
+        {% if error %}<div class="error">{{ error }}</div>{% endif %}
+    </div>
+</body>
+</html>
+"""
+
+@app.route('/', methods=['GET', 'POST'])
+def gatekeeper():
+    link_id = request.args.get('id')
+    if not link_id or link_id not in LINKS:
+        return "❌ Error: Invalid or missing Link ID."
+
+    target_data = LINKS[link_id]
+    
+    # 1. CHECK THE COOKIE (How many times have they failed?)
+    # We look for a cookie named 'failures_ID' (e.g., failures_wiki)
+    cookie_name = f"failures_{link_id}"
+    try:
+        failures = int(request.cookies.get(cookie_name, 0))
+    except:
+        failures = 0
+
+    render_args = {
+        'link_id': link_id, 
+        'logo_file': LOGO_FILENAME, 
+        'brand_text': BRAND_TEXT,
+        'blocked': False
+    }
+
+    # 2. IF TOO MANY FAILURES, SHOW BLOCKED SCREEN
+    if failures >= MAX_RETRIES:
+        render_args['blocked'] = True
+        return render_template_string(HTML_TEMPLATE, **render_args)
+
+    if request.method == 'POST':
+        user_input = request.form.get('password')
+
+        if user_input == target_data['password']:
+            # SUCCESS: Create response that CLEARS the failure cookie
+            resp = make_response(redirect(target_data['url']))
+            resp.set_cookie(cookie_name, '0', max_age=0)
+            return resp
+        else:
+            # FAIL: Create response that INCREMENTS the failure cookie
+            failures += 1
+            render_args['error'] = f"❌ Incorrect. {MAX_RETRIES - failures} attempts left."
+            
+            # If they just hit the limit, block them immediately
+            if failures >= MAX_RETRIES:
+                render_args['blocked'] = True
+                render_args['error'] = None # Hide error, show block msg
+            
+            resp = make_response(render_template_string(HTML_TEMPLATE, **render_args))
+            
+            # Save the new failure count to their browser for 5 minutes (300 seconds)
+            resp.set_cookie(cookie_name, str(failures), max_age=BAN_TIME_SECONDS)
+            return resp
+
+    return render_template_string(HTML_TEMPLATE, **render_args)
