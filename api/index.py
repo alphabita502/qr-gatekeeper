@@ -5,13 +5,26 @@ app = Flask(__name__)
 
 # ================= CONFIGURATION =================
 # 1. ONE PASSWORD FOR EVERYTHING
-MASTER_PASSWORD = "1234"
+MASTER_PASSWORD = "baps@1234"
 
 # 2. SIMPLIFIED LINK LIST (Just ID and URL)
 LINKS = {
-    "wiki": "https://www.wikipedia.org",
-    "google": "https://www.google.com",
-    "youtube": "https://www.youtube.com"
+    "AP_PC": "https://drive.google.com/file/d/1vVE08gtDkODkG0RbbdOsRzR45SKh44vd/view?usp=drive_link",
+    "AP_AD": "https://drive.google.com/file/d/1YKAEgqRvXAFQINOOlngtKhD6fQXGRlhs/view?usp=drive_link",
+    "BKT_PC": "https://drive.google.com/file/d/12F56UX_8atdZP6tV-sIYMs_Vh60d9u7q/view?usp=drive_link",
+    "GNSYM_PC": "https://drive.google.com/file/d/1BtAsAlCELOH3WCJaV5pPyEr6XTbq2COb/view?usp=drive_link",
+    "HRKSN_PC": "https://drive.google.com/file/d/1zApsjwI2MKMOzt90qCY7Pyft445f00yi/view?usp=drive_link",
+    "PRMVT_PC": "https://drive.google.com/file/d/1n2X0HDzCOLQZbIgUPu0pHtc85aQ6lIo3/view?usp=drive_link",
+    "SHJ_PC": "https://drive.google.com/file/d/1AlYVlKS5YWhNPzvUA-VPSGOpUQiiGH6c/view?usp=drive_link",
+    "SHJ_AD": "https://drive.google.com/file/d/19W9UydwbGz_1vDT7ax2pU44Q19CcQBCq/view?usp=drive_link",
+    "SUVSN_PC": "https://drive.google.com/file/d/1xOr8qfGX3wcdUpMTb7cxl_66BTH5LOOx/view?usp=drive_link",
+    "SQ7_Refrence_Manual": "https://drive.google.com/file/d/1ipQWPTNu3aSJ5yR1BZvxu4H4qZg9E9TY/view?usp=drive_link",
+    "N_Labs_XP48": "https://www.n-labs.co.in/database/media/pdf/Catlouge%202024.pdf",
+    "PX10_PX3_Refrence_Manual": "https://usa.yamaha.com/files/download/other_assets/8/792728/px10_en_rm_f0.pdf",
+    "NXAMP4x4_Data_Sheet": "https://www.nexo-sa.com/wp-content/uploads/NXAMP4x4mk2_datasheet_v1.3.pdf",
+    "NXAMP4x2_Data_Sheet": "https://www.nexo-sa.com/wp-content/uploads/NXAMP4x2mk2_datasheet_v1.8.pdf",
+    "MRX7D_Data_Sheet": "https://drive.google.com/file/d/1wF-nrEa7wsPJGsYypX-TriQDVwRLW9vs/view?usp=drive_link",
+    "MA2120_Data_Sheet": "https://drive.google.com/file/d/1Od3_hdQS6uOzjT68FKW335BuTAh9hvIA/view?usp=drive_link",
 }
 
 LOGO_FILENAME = "logo.png"
