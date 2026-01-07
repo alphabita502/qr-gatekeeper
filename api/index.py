@@ -3,11 +3,15 @@ import time
 
 app = Flask(__name__)
 
-# --- CONFIGURATION ---
+# ================= CONFIGURATION =================
+# 1. ONE PASSWORD FOR EVERYTHING
+MASTER_PASSWORD = "1234"
+
+# 2. SIMPLIFIED LINK LIST (Just ID and URL)
 LINKS = {
-    "wiki": { "url": "https://www.wikipedia.org", "password": "WikiPassword123" },
-    "google": { "url": "https://www.google.com", "password": "GoogleSecret456" },
-    "youtube": { "url": "https://www.youtube.com", "password": "VideoPassword789" }
+    "wiki": "https://www.wikipedia.org",
+    "google": "https://www.google.com",
+    "youtube": "https://www.youtube.com"
 }
 
 LOGO_FILENAME = "logo.png"
@@ -15,7 +19,8 @@ BRAND_TEXT = "SNR.AUDIO"
 
 # RATE LIMIT SETTINGS
 MAX_RETRIES = 5
-BAN_TIME_SECONDS = 300  # 5 Minutes
+BAN_TIME_SECONDS = 300
+# =================================================
 
 HTML_TEMPLATE = """
 <!DOCTYPE html>
@@ -62,10 +67,10 @@ def gatekeeper():
     if not link_id or link_id not in LINKS:
         return "❌ Error: Invalid or missing Link ID."
 
-    target_data = LINKS[link_id]
+    # Get the destination URL directly from the simple dictionary
+    destination_url = LINKS[link_id]
     
-    # 1. CHECK THE COOKIE (How many times have they failed?)
-    # We look for a cookie named 'failures_ID' (e.g., failures_wiki)
+    # Cookie Logic
     cookie_name = f"failures_{link_id}"
     try:
         failures = int(request.cookies.get(cookie_name, 0))
@@ -79,7 +84,6 @@ def gatekeeper():
         'blocked': False
     }
 
-    # 2. IF TOO MANY FAILURES, SHOW BLOCKED SCREEN
     if failures >= MAX_RETRIES:
         render_args['blocked'] = True
         return render_template_string(HTML_TEMPLATE, **render_args)
@@ -87,24 +91,20 @@ def gatekeeper():
     if request.method == 'POST':
         user_input = request.form.get('password')
 
-        if user_input == target_data['password']:
-            # SUCCESS: Create response that CLEARS the failure cookie
-            resp = make_response(redirect(target_data['url']))
+        # === CHANGED: CHECK AGAINST MASTER PASSWORD ===
+        if user_input == MASTER_PASSWORD:
+            resp = make_response(redirect(destination_url))
             resp.set_cookie(cookie_name, '0', max_age=0)
             return resp
         else:
-            # FAIL: Create response that INCREMENTS the failure cookie
             failures += 1
             render_args['error'] = f"❌ Incorrect. {MAX_RETRIES - failures} attempts left."
             
-            # If they just hit the limit, block them immediately
             if failures >= MAX_RETRIES:
                 render_args['blocked'] = True
-                render_args['error'] = None # Hide error, show block msg
+                render_args['error'] = None
             
             resp = make_response(render_template_string(HTML_TEMPLATE, **render_args))
-            
-            # Save the new failure count to their browser for 5 minutes (300 seconds)
             resp.set_cookie(cookie_name, str(failures), max_age=BAN_TIME_SECONDS)
             return resp
 
